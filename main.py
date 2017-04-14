@@ -29,10 +29,20 @@ class Post(db.Model):
     post = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
 
-
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-        posts = db.GqlQuery("SELECT * FROM Post")
+        self.redirect("/blog")
+
+class BlogHandler(webapp2.RequestHandler):
+    def get(self):
+        posts = db.GqlQuery("SELECT * FROM Post ORDER BY created DESC LIMIT 5")
+        t = jinja_env.get_template("blog.html")
+        content = t.render(posts=posts)
+        self.response.write(content)
+
+class NewPostHandler(webapp2.RequestHandler):
+    def get(self):
+        posts = db.GqlQuery("SELECT * FROM Post ORDER BY created DESC LIMIT 5")
         t = jinja_env.get_template("new_post.html")
         content = t.render(posts=posts)
         self.response.write(content)
@@ -41,21 +51,41 @@ class MainHandler(webapp2.RequestHandler):
         title = self.request.get("title")
         newpost = self.request.get("newpost")
         error = ""
-        t = jinja_env.get_template("new_post.html")
-        content = t.render(title = title, newpost = newpost, error = error)
-        posts = db.GqlQuery("SELECT * FROM Post ORDER BY created DESC")
+
+        posts = db.GqlQuery("SELECT * FROM Post ORDER BY created DESC LIMIT 5")
 
         if title and newpost:
             p = Post(title = title, post = newpost)
             p.put()
+            i = p.key().id()
 
-            self.redirect("/")
+            self.redirect("/blog/" + str(i))
         else:
             error="Submissions require a Title and text to post!"
 
+        t = jinja_env.get_template("newpostconfirm.html")
         content = t.render(title = title, newpost = newpost, error = error, posts = posts)
         self.response.write(content)
 
+
+class ViewPostHandler(webapp2.RequestHandler):
+    def get(self, id):
+        post = Post.get_by_id(int(id), parent=None)
+        posts = db.GqlQuery("SELECT * FROM Post WHERE ID=" + id)
+
+        if post:
+            t = jinja_env.get_template("view_post.html")
+            content = t.render(post = post)
+            self.response.write(content)
+        else:
+            t = jinja_env.get_template("error.html")
+            content = t.render(post = post)
+            self.response.write(content)
+
+
 app = webapp2.WSGIApplication([
-    ('/', MainHandler)
+    ('/', MainHandler),
+    ('/newpost', NewPostHandler),
+    ('/blog', BlogHandler),
+    webapp2.Route('/blog/<id:\d+>', ViewPostHandler)
 ], debug=True)

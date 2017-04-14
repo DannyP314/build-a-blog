@@ -4,17 +4,16 @@
 <h3> Write Your Post! </h3>
 <form action="/newpost" method="post">
     <label>
-      <div class="post-title">Title</div>
+      <div>Title</div>
       <input type="text" name="title" value="{{title}}"/>
     </label>
     <label>
-      <div class="post-post">Post</div>
+      <div>Post</div>
       <textarea name="newpost">{{newpost}}</textarea>
   </label><br />
-    <div color="red">{{error}}</div>
+    <div>{{error}}</div>
     <input type=submit />
 
 
 </form>
-
 {% endblock %}
